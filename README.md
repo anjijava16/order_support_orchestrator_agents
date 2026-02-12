@@ -59,3 +59,45 @@ Data Layer
 
 
 ```
+
+
+# More agents
+
+```
+Recommended Agents for Your Project (Balanced)
+
+If you want powerful but manageable, use:
+
+🎯 12–15 Agents Setup Core
+
+Host Orchestrator Agent
+
+Customer Support Agent
+
+Order Management Agent
+
+Shipping & Tracking Agent
+
+Returns & Refund Agent
+
+Notification Agent
+
+Knowledge Base Agent
+
+-- Advanced
+
+Sentiment Analysis Agent
+
+Escalation Agent
+
+Inventory Agent
+
+Payment Agent
+
+Delivery Issue Agent
+
+Address Validation Agent
+
+Analytics Agent
+
+```
