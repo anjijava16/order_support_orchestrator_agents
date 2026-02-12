@@ -1,6 +1,33 @@
 # order_support_orchestrator_agents
 Order support Orchestrator Agents 
 
+# High Level Flow
+```
+
+Customer (Chat UI)
+        │
+        ▼
+Customer Support Agent (NLP) (Customer)
+        │
+        ▼
+🧠 Host / Orchestrator Agent
+        │
+ ┌──────┼────────┬──────────┬───────────┬──────────┐
+ ▼      ▼        ▼          ▼           ▼          ▼
+Order  Shipping Returns  Knowledge  Notification  (others)
+Agent  Agent    Agent    Base Agent Agent
+        │
+        ▼
+🧠 Host Agent aggregates responses
+        │
+        ▼
+Customer Support Agent formats reply
+        │
+        ▼
+Customer
+
+
+```
 
 ```
 
