@@ -26,6 +26,11 @@ dependencies = [
 
 ]
 
+langraph=[
+
+]
+
+
 [tool.ruff]
 line-length = 88
 indent-width = 4 # Google Style Guide §3.4: 4 spaces
