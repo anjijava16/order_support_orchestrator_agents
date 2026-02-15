@@ -28,7 +28,7 @@ from a2a.utils import new_agent_text_message, new_task
 from a2a.utils.errors import ServerError
 
 host = "localhost"
-port = 8076   # or any available port
+port = 8076  # or any available port
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # ----------------------------------------------------------------------
 # Delivery Tools (async functions)
 # ----------------------------------------------------------------------
+
 
 async def get_delivery_status(order_id: str) -> str:
     """
@@ -65,7 +66,9 @@ async def track_package(tracking_number: str) -> str:
     return f"Package {tracking_number} is in transit, last seen at Chicago sorting facility."
 
 
-async def reschedule_delivery(order_id: str, new_date: str, time_window: str = "any") -> str:
+async def reschedule_delivery(
+    order_id: str, new_date: str, time_window: str = "any"
+) -> str:
     """
     Reschedule a delivery to a new date and optional time window.
 
@@ -81,7 +84,9 @@ async def reschedule_delivery(order_id: str, new_date: str, time_window: str = "
     return f"Delivery for order {order_id} rescheduled to {new_date} ({time_window}). Confirmation sent."
 
 
-async def report_delivery_issue(order_id: str, issue_type: str, description: str) -> str:
+async def report_delivery_issue(
+    order_id: str, issue_type: str, description: str
+) -> str:
     """
     Report a problem with a delivery (missing, damaged, delayed).
 
@@ -100,6 +105,7 @@ async def report_delivery_issue(order_id: str, issue_type: str, description: str
 # ----------------------------------------------------------------------
 # Delivery Agent (AutoGen-based, with per-session history)
 # ----------------------------------------------------------------------
+
 
 class DeliveryAgent:
     """AutoGen-based agent for delivery inquiries, maintaining per-session message history."""
@@ -139,69 +145,127 @@ class DeliveryAgent:
                 "Always ask for missing information if the query is incomplete (e.g., order ID, tracking number).\n"
                 "Keep your responses concise and helpful."
             ),
-           # reflect_on_tool_use=True,
+            # reflect_on_tool_use=True,
         )
 
         # Store conversation history per session
         self._session_histories: Dict[str, List[ChatMessage]] = {}
 
-    # async def stream(self, query: str, session_id: str) -> AsyncIterable[Dict[str, Any]]:
-    #     """
-    #     Stream the agent's response for a given query and session.
-    #     Yields dictionaries with keys: is_task_complete, require_user_input, content.
-    #     """
-    #     # Retrieve or initialize history for this session
-    #     if session_id not in self._session_histories:
-    #         self._session_histories[session_id] = []
 
-    #     # Create a user message for the new query
-    #     user_message = TextMessage(content=query, source="user")
+import asyncio
+import logging
+import os
+from collections.abc import AsyncIterable
+from typing import Any, Dict, List
 
-    #     # Append it to the session history
-    #     self._session_histories[session_id].append(user_message)
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.messages import ChatMessage, TextMessage
+from autogen_core import CancellationToken
+from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-    #     # Yield a "working" status immediately
-    #     yield {
-    #         "is_task_complete": False,
-    #         "require_user_input": False,
-    #         "content": "Processing your delivery request...",
-    #     }
+from a2a.server.agent_execution import AgentExecutor, RequestContext
+from a2a.server.events import EventQueue
+from a2a.server.tasks import TaskUpdater
+from a2a.types import (
+    AgentCapabilities,
+    AgentCard,
+    AgentSkill,
+    InternalError,
+    InvalidParamsError,
+    Part,
+    TaskState,
+    TextPart,
+    UnsupportedOperationError,
+)
+from a2a.utils import new_agent_text_message, new_task
+from a2a.utils.errors import ServerError
 
-    #     # Run the agent with the full conversation history
-    #     final_text_parts: List[str] = []
-    #     async for event in self.agent.run_stream(
-    #         task=self._session_histories[session_id],  # pass the whole history
-    #         cancellation_token=CancellationToken(),
-    #     ):
-    #         # `event` can be various message types (TextMessage, ToolCallMessage, etc.)
-    #         # We need to store all events to keep history correct.
-    #         self._session_histories[session_id].append(event)
+logger = logging.getLogger(__name__)
 
-    #         # If it's a text message, accumulate it for the final output
-    #         if isinstance(event, TextMessage):
-    #             final_text_parts.append(event.content)
 
-    #     # The loop ends when the agent finishes. The final assistant message(s) are now in history.
-    #     final_content = " ".join(final_text_parts).strip()
-    #     if not final_content:
-    #         # Fallback: try to get the last message content
-    #         last_msg = self._session_histories[session_id][-1]
-    #         final_content = getattr(last_msg, "content", "")
+# ----------------------------------------------------------------------
+# Delivery Tools (unchanged)
+# ----------------------------------------------------------------------
+async def get_delivery_status(order_id: str) -> str:
+    await asyncio.sleep(0.5)
+    return f"Order {order_id} is currently 'Out for delivery' and expected today."
 
-    #     # Yield the final response
-    #     yield {
-    #         "is_task_complete": True,
-    #         "require_user_input": False,
-    #         "content": final_content,
-    #     }
-    async def stream(self, query: str, session_id: str) -> AsyncIterable[Dict[str, Any]]:
+
+async def track_package(tracking_number: str) -> str:
+    await asyncio.sleep(0.5)
+    return f"Package {tracking_number} is in transit, last seen at Chicago sorting facility."
+
+
+async def reschedule_delivery(
+    order_id: str, new_date: str, time_window: str = "any"
+) -> str:
+    await asyncio.sleep(0.5)
+    return f"Delivery for order {order_id} rescheduled to {new_date} ({time_window}). Confirmation sent."
+
+
+async def report_delivery_issue(
+    order_id: str, issue_type: str, description: str
+) -> str:
+    await asyncio.sleep(0.5)
+    return f"Issue reported for order {order_id}: '{issue_type}' – {description}. Support will contact you."
+
+
+# ----------------------------------------------------------------------
+# Delivery Agent (using run() for reliability)
+# ----------------------------------------------------------------------
+class DeliveryAgent:
+    SUPPORTED_CONTENT_TYPES = ["text", "text/plain"]
+
+    def __init__(self):
+        # Configure the model client exactly as in the working simple demo
+        # This uses environment variables OPENAI_API_KEY and OPENAI_BASE_URL (if set)
+        self.model_client = OpenAIChatCompletionClient(
+            model=os.getenv("DELIVERY_MODEL", "gpt-4o"),
+            # If using OpenRouter, set base_url and api_key explicitly
+            # api_key=os.getenv("OPENROUTER_API_KEY"),
+            # base_url="https://openrouter.ai/api/v1",
+        )
+
+        self.agent = AssistantAgent(
+            name="delivery_assistant",
+            model_client=self.model_client,
+            tools=[
+                get_delivery_status,
+                track_package,
+                reschedule_delivery,
+                report_delivery_issue,
+            ],
+            system_message=(
+                "You are a specialised assistant for order delivery management. "
+                "Your tasks include:\n"
+                "- Providing the current delivery status of an order.\n"
+                "- Tracking a package using a tracking number.\n"
+                "- Rescheduling a delivery to a new date/time.\n"
+                "- Reporting issues with a delivery (missing, damaged, etc.).\n\n"
+                "Use the available tools to answer queries accurately. "
+                "If the user asks about anything unrelated to deliveries, politely explain that you can only assist with delivery‑related questions. "
+                "Always ask for missing information if the query is incomplete (e.g., order ID, tracking number).\n"
+                "Keep your responses concise and helpful."
+            ),
+            reflect_on_tool_use=True,
+        )
+
+        # Per-session conversation history
+        self._session_histories: Dict[str, List[ChatMessage]] = {}
+
+    async def stream(
+        self, query: str, session_id: str
+    ) -> AsyncIterable[Dict[str, Any]]:
+        """Stream the agent's response using run() – yields working status and final answer."""
+        # Initialize history for this session
         if session_id not in self._session_histories:
             self._session_histories[session_id] = []
-        print("Initialized history for session:", session_id)
+
+        # Add user message to history
         user_message = TextMessage(content=query, source="user")
-        print(f"Received query for session {session_id}: {query} and user message: {user_message}")
         self._session_histories[session_id].append(user_message)
 
+        # Immediate working status
         yield {
             "is_task_complete": False,
             "require_user_input": False,
@@ -209,27 +273,31 @@ class DeliveryAgent:
         }
 
         # Run the agent with the full conversation history
-        async for event in self.agent.run_stream(
-            task=self._session_histories[session_id],
-            cancellation_token=CancellationToken(),
-        ):
-            
-            # Store every event
-            self._session_histories[session_id].append(event)
+        try:
+            result = await self.agent.run(
+                task=self._session_histories[session_id],
+                cancellation_token=CancellationToken(),
+            )
+        except Exception as e:
+            logger.error(f"Error in agent.run: {e}")
+            yield {
+                "is_task_complete": True,
+                "require_user_input": False,
+                "content": f"An error occurred: {e!s}",
+            }
+            return
 
-            # (Optional) yield intermediate status for tool calls
-            # if isinstance(event, ToolCallMessage):
-            #     yield {...}
+        # Update history with the complete conversation from result
+        self._session_histories[session_id] = result.messages
 
-        # After streaming, find the last assistant TextMessage
+        # Extract the last assistant message
         final_content = ""
-        for msg in reversed(self._session_histories[session_id]):
-            if isinstance(msg, TextMessage) and msg.source == "assistant":
+        for msg in reversed(result.messages):
+            if isinstance(msg, TextMessage) and msg.source == self.agent.name:
                 final_content = msg.content
-                print(f"Final assistant message for session {session_id}: {final_content}")
                 break
 
-        if not final_content:
+        if final_content is None:
             final_content = "Sorry, I couldn't generate a response."
 
         yield {
@@ -242,6 +310,7 @@ class DeliveryAgent:
 # ----------------------------------------------------------------------
 # Delivery Agent Executor (A2A)
 # ----------------------------------------------------------------------
+
 
 class DeliveryAgentExecutor(AgentExecutor):
     """A2A Executor for the Delivery Agent."""
@@ -313,6 +382,7 @@ class DeliveryAgentExecutor(AgentExecutor):
 # Agent Card and Server Setup
 # ----------------------------------------------------------------------
 
+
 def create_delivery_agent_card() -> AgentCard:
     skill = AgentSkill(
         id="delivery_management",
@@ -332,7 +402,7 @@ def create_delivery_agent_card() -> AgentCard:
         description="Specialised assistant for order delivery management.",
         url=f"http://{host}:{port}/",
         version="1.0.0",
-        default_input_modes=["text", "text/plain"], 
+        default_input_modes=["text", "text/plain"],
         default_output_modes=["text", "text/plain"],
         capabilities=capabilities,
         skills=[skill],

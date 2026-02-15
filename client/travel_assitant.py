@@ -4,11 +4,12 @@ import httpx
 import json
 from datetime import datetime
 
-base_url = 'http://localhost:8076'
-
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
+    
+    base_url = 'http://localhost:9090'
+    
     async with httpx.AsyncClient(timeout=60.0) as client:
         # 1. Fetch agent card
         logger.info("🔍 Fetching agent card...")
@@ -34,7 +35,7 @@ async def main() -> None:
                     "parts": [
                         {
                             "kind": "text",
-                            "text": "What's the delivery status of order ORD-12345?"
+                            "text": "What is my order status 123."
                         }
                     ],
                     "messageId": uuid4().hex
@@ -53,7 +54,6 @@ async def main() -> None:
         agent_message = result.get("result", {}).get("artifacts", [{}])[0].get("parts", [{}])[0].get("text", "")
         logger.info(f"✅ Received complete response")
         logger.info(f"📝 Message preview: {agent_message[:150]}...\n")
-        print(f"Full response:\n{json.dumps(result, indent=2)}\n")
         
         # 3. TRUE STREAMING MESSAGE
         logger.info(f"{'='*60}")
@@ -73,7 +73,7 @@ async def main() -> None:
                     "parts": [
                         {
                             "kind": "text",
-                            "text": "What's the delivery status of order ORD-12345?."
+                            "text": "What is my order status 123.."
                         }
                     ],
                     "messageId": uuid4().hex
@@ -214,7 +214,7 @@ async def main() -> None:
                     "parts": [
                         {
                             "kind": "text",
-                            "text": "What's the delivery status of order ORD-12345?"
+                            "text": "What is my order status 123."
                         }
                     ],
                     "messageId": uuid4().hex,

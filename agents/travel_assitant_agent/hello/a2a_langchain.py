@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 host = "localhost"
-port = "9090"
+port = 9090
 
 
 class TravelPlannerAgent:
@@ -78,7 +78,6 @@ class TravelPlannerAgent:
             }
 
 
-from typing import override
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
@@ -97,7 +96,6 @@ class TravelPlannerAgentExecutor(AgentExecutor):
     def __init__(self):
         self.agent = TravelPlannerAgent()
 
-    @override
     async def execute(
         self,
         context: RequestContext,
@@ -128,7 +126,6 @@ class TravelPlannerAgentExecutor(AgentExecutor):
         )
         await event_queue.enqueue_event(status)
 
-    @override
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         raise Exception("cancel not supported")
 
@@ -155,7 +152,7 @@ if __name__ == "__main__":
     agent_card = AgentCard(
         name="travel planner Agent",
         description="travel planner",
-        url=f"http://{localhost}:{port}/",
+        url=f"http://{host}:{port}/",
         version="1.0.0",
         default_input_modes=["text"],
         default_output_modes=["text"],
@@ -172,5 +169,4 @@ if __name__ == "__main__":
         agent_card=agent_card, http_handler=request_handler
     )
     import uvicorn
-
     uvicorn.run(server.build(), host=host, port=port)
