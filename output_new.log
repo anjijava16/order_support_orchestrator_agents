@@ -1,0 +1,150 @@
+2026-03-17 22:33:52,631  INFO      HTTP Request: GET http://localhost:8072/.well-known/agent.json "HTTP/1.1 200 OK"
+2026-03-17 22:33:52,631  INFO      ──── Agent Card ──────────────────────────────────────────
+2026-03-17 22:33:52,631  INFO      {
+  "capabilities": {
+    "pushNotifications": false,
+    "streaming": true
+  },
+  "defaultInputModes": [
+    "text",
+    "text/plain"
+  ],
+  "defaultOutputModes": [
+    "text",
+    "text/plain"
+  ],
+  "description": "Structured JSON-in / JSON-out agent for transaction verification and confirmation.",
+  "name": "Transaction Agent",
+  "preferredTransport": "JSONRPC",
+  "protocolVersion": "0.3.0",
+  "skills": [
+    {
+      "description": "Accepts structured user + transaction data (JSON), verifies the transaction, resolves the user address, and returns a structured confirmation response (JSON).",
+      "examples": [
+        "{\"user_id\": \"U-1001\", \"user_name\": \"Alice Johnson\", \"user_transaction\": \"TXN-20240317-9988\", \"user_message\": \"Please verify and confirm my transaction.\", \"user_sid\": \"SESSION-XYZ-001\"}",
+        "{\"user_id\": \"U-2002\", \"user_name\": \"Bob Smith\", \"user_transaction\": \"TXN-20240318-1122\", \"user_message\": \"Confirm payment\", \"user_sid\": \"SESSION-ABC-002\"}"
+      ],
+      "id": "transaction_processing",
+      "name": "Transaction Processing Tool",
+      "tags": [
+        "transaction",
+        "payment",
+        "confirmation",
+        "verification"
+      ]
+    }
+  ],
+  "url": "http://localhost:8072/",
+  "version": "1.0.0"
+}
+2026-03-17 22:33:52,631  INFO      ──── [SINGLE] Sending request ────────────────────────────
+2026-03-17 22:33:52,631  INFO      INPUT:
+{
+  "user_id": "U-1001",
+  "user_name": "Alice Johnson",
+  "user_transaction": "TXN-20240317-9988",
+  "user_message": "Please verify and confirm my transaction.",
+  "user_sid": "SESSION-XYZ-001"
+}
+2026-03-17 22:33:56,467  INFO      HTTP Request: POST http://localhost:8072/ "HTTP/1.1 200 OK"
+2026-03-17 22:33:56,468  INFO      OUTPUT:
+{
+  "user_address": "123 Main St, New York, NY 10001, USA",
+  "user_confirmation": "CONF-729CD0A8F090",
+  "user_message": "Transaction TXN-20240317-9988 confirmed for Alice Johnson.",
+  "user_status": "SUCCESS",
+  "user_transaction_message": "Transaction of 250.0 USD to Vendor XYZ has been confirmed."
+}
+2026-03-17 22:33:56,469  INFO      ──── [STREAM] Sending request ────────────────────────────
+2026-03-17 22:33:56,469  INFO      INPUT:
+{
+  "user_id": "U-2002",
+  "user_name": "Bob Smith",
+  "user_transaction": "TXN-20240318-1122",
+  "user_message": "Confirm my payment please.",
+  "user_sid": "SESSION-BOB-002"
+}
+2026-03-17 22:33:56,499  INFO      HTTP Request: POST http://localhost:8072/ "HTTP/1.1 200 OK"
+2026-03-17 22:33:57,326  INFO      [EVENT 2] working → Processing your transaction request...
+2026-03-17 22:33:57,328  INFO      [EVENT 3] working → Processing your transaction request...
+2026-03-17 22:33:57,992  INFO      [EVENT 4] working → Processing your transaction request...
+2026-03-17 22:33:57,993  INFO      [EVENT 5] working → Processing your transaction request...
+2026-03-17 22:33:58,959  INFO      [EVENT 6] working → Processing your transaction request...
+2026-03-17 22:33:58,960  INFO      [EVENT 7] working → Processing your transaction request...
+2026-03-17 22:34:00,881  INFO      [EVENT 9] completed
+2026-03-17 22:34:00,883  INFO      OUTPUT:
+{}
+2026-03-17 22:34:00,883  INFO      ──── [BATCH] Sending 3 requests concurrently ────────────
+2026-03-17 22:34:00,883  INFO      ──── [SINGLE] Sending request ────────────────────────────
+2026-03-17 22:34:00,883  INFO      INPUT:
+{
+  "user_id": "U-3001",
+  "user_name": "Carol White",
+  "user_transaction": "TXN-BATCH-0001",
+  "user_message": "Process batch transaction 1",
+  "user_sid": "134f69ae-3b77-4cec-9e24-b79cf8e271c3"
+}
+2026-03-17 22:34:00,901  INFO      ──── [SINGLE] Sending request ────────────────────────────
+2026-03-17 22:34:00,901  INFO      INPUT:
+{
+  "user_id": "U-3002",
+  "user_name": "David Brown",
+  "user_transaction": "TXN-BATCH-0002",
+  "user_message": "Process batch transaction 2",
+  "user_sid": "a381b11d-3277-46f8-8098-68f81962a39b"
+}
+2026-03-17 22:34:00,916  INFO      ──── [SINGLE] Sending request ────────────────────────────
+2026-03-17 22:34:00,916  INFO      INPUT:
+{
+  "user_id": "U-3003",
+  "user_name": "Eva Martinez",
+  "user_transaction": "TXN-BATCH-0003",
+  "user_message": "Process batch transaction 3",
+  "user_sid": "20977adb-5ea7-49f6-898e-f181814c6ffc"
+}
+2026-03-17 22:34:04,703  INFO      HTTP Request: POST http://localhost:8072/ "HTTP/1.1 200 OK"
+2026-03-17 22:34:04,704  INFO      OUTPUT:
+{
+  "user_address": "123 Main St, New York, NY 10001, USA",
+  "user_confirmation": "CONF-F0450CAA6F38",
+  "user_message": "Transaction TXN-BATCH-0001 confirmed for Carol White.",
+  "user_status": "SUCCESS",
+  "user_transaction_message": "Transaction of 250.0 USD with Vendor XYZ is confirmed."
+}
+2026-03-17 22:34:04,777  INFO      HTTP Request: POST http://localhost:8072/ "HTTP/1.1 200 OK"
+2026-03-17 22:34:04,777  INFO      OUTPUT:
+{
+  "user_address": "123 Main St, New York, NY 10001, USA",
+  "user_confirmation": "CONF-76A4AEAF7FE7",
+  "user_message": "Batch transaction 2 processed successfully.",
+  "user_status": "SUCCESS",
+  "user_transaction_message": "Transaction TXN-BATCH-0002 for $250.0 USD to Vendor XYZ confirmed."
+}
+2026-03-17 22:34:04,979  INFO      HTTP Request: POST http://localhost:8072/ "HTTP/1.1 200 OK"
+2026-03-17 22:34:04,980  INFO      OUTPUT:
+{
+  "user_address": "123 Main St, New York, NY 10001, USA",
+  "user_confirmation": "CONF-94126B3017B2",
+  "user_message": "Transaction processed successfully.",
+  "user_status": "SUCCESS",
+  "user_transaction_message": "Transaction TXN-BATCH-0003 confirmed for Eva Martinez."
+}
+2026-03-17 22:34:04,980  INFO      Batch[0] TXN-BATCH-0001 → status=SUCCESS  confirmation=CONF-F0450CAA6F38
+2026-03-17 22:34:04,980  INFO      Batch[1] TXN-BATCH-0002 → status=SUCCESS  confirmation=CONF-76A4AEAF7FE7
+2026-03-17 22:34:04,980  INFO      Batch[2] TXN-BATCH-0003 → status=SUCCESS  confirmation=CONF-94126B3017B2
+
+── Single Result ──────────────────────────────────────────
+  user_address:             123 Main St, New York, NY 10001, USA
+  user_confirmation:        CONF-729CD0A8F090
+  user_message:             Transaction TXN-20240317-9988 confirmed for Alice Johnson.
+  user_transaction_message: Transaction of 250.0 USD to Vendor XYZ has been confirmed.
+  user_status:              SUCCESS
+
+── Streaming Result ───────────────────────────────────────
+  user_status:       None
+  user_confirmation: None
+
+── Batch Results ──────────────────────────────────────────
+  [0] status=SUCCESS     conf=CONF-F0450CAA6F38
+  [1] status=SUCCESS     conf=CONF-76A4AEAF7FE7
+  [2] status=SUCCESS     conf=CONF-94126B3017B2

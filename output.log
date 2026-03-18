@@ -1,0 +1,16 @@
+
+── Single Result ──────────────────────────────────────────
+  user_address:             123 Main St, New York, NY 10001, USA
+  user_confirmation:        CONF-0273CF6A7DA3
+  user_message:             Transaction TXN-20240317-9988 confirmed for Alice Johnson.
+  user_transaction_message: Transaction of 250.0 USD with Vendor XYZ is now confirmed.
+  user_status:              SUCCESS
+
+── Streaming Result ───────────────────────────────────────
+  user_status:       None
+  user_confirmation: None
+
+── Batch Results ──────────────────────────────────────────
+  [0] status=SUCCESS     conf=CONF-DCED30249C6E
+  [1] status=SUCCESS     conf=CONF-735EA8BDDB6F
+  [2] status=SUCCESS     conf=CONF-2772D6B5CE45

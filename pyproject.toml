@@ -17,6 +17,7 @@ dependencies = [
     "langgraph==1.0.2",
     "langchain==1.0.2",
     "langchain_openai",
+    "langchain_community",
     "beeai-framework[a2a]==0.1.75",
     "nest_asyncio",
     "ipython",
@@ -30,7 +31,7 @@ dependencies = [
     "strands-agents[a2a]",
     "autogen-agentchat>=0.7.5",
     "autogen-ext[openai]>=0.7.5",
-
+    "pymysql>=1.1.2",
 ]
 
 langraph=[
